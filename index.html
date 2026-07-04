@@ -1,0 +1,2637 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>채굴이의 싱달러 채굴일지 제작실</title>
+    <style>
+      :root {
+        --ink: #171717;
+        --muted: #68635d;
+        --paper: #fffdf7;
+        --line: #24211d;
+        --soft-line: #ddd5c9;
+        --mint: #bdebdc;
+        --yellow: #f5cc5d;
+        --red: #eb5b4b;
+        --blue: #7ab5d6;
+        --stone: #ebe6dc;
+        --white: #ffffff;
+        --shadow: 0 18px 50px rgba(33, 28, 20, 0.12);
+        --radius: 8px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        color: var(--ink);
+        background:
+          linear-gradient(90deg, rgba(189, 235, 220, 0.24), transparent 34%),
+          linear-gradient(180deg, #f6efe4 0, #fffdf7 360px);
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+      }
+
+      button,
+      input,
+      textarea,
+      select {
+        font: inherit;
+      }
+
+      button {
+        border: 1.5px solid var(--line);
+        border-radius: 8px;
+        color: var(--ink);
+        background: var(--white);
+        cursor: pointer;
+        transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 3px 3px 0 var(--line);
+      }
+
+      .app {
+        width: min(1440px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 28px 0 42px;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 18px 0 24px;
+      }
+
+      .brand h1 {
+        margin: 0;
+        font-size: clamp(32px, 5vw, 64px);
+        line-height: 0.95;
+        letter-spacing: 0;
+      }
+
+      .brand p {
+        margin: 12px 0 0;
+        color: var(--muted);
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .top-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .top-actions button,
+      .copy-btn {
+        min-height: 40px;
+        padding: 0 14px;
+        font-weight: 800;
+      }
+
+      .phase-book {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 18px;
+        border: 2px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.82);
+        box-shadow: var(--shadow);
+        padding: 12px;
+      }
+
+      .phase-nav {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+      }
+
+      .phase-btn {
+        min-height: 48px;
+        padding: 0 10px;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 950;
+        background: var(--paper);
+      }
+
+      .phase-btn span {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 900;
+      }
+
+      .phase-btn.active {
+        background: var(--mint);
+        box-shadow: 3px 3px 0 var(--line);
+      }
+
+      .phase-controls {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .phase-controls button {
+        min-height: 40px;
+        padding: 0 13px;
+        font-weight: 950;
+      }
+
+      .phase-label {
+        min-width: 116px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 950;
+        text-align: center;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 440px minmax(0, 1fr);
+        gap: 18px;
+        align-items: start;
+      }
+
+      .grid.single-phase {
+        grid-template-columns: 1fr;
+      }
+
+      [data-phase-section][hidden],
+      .workspace[hidden],
+      .controls[hidden] {
+        display: none;
+      }
+
+      .panel {
+        border: 2px solid var(--line);
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, 0.86);
+        box-shadow: var(--shadow);
+      }
+
+      .controls {
+        position: sticky;
+        top: 16px;
+        overflow: hidden;
+      }
+
+      .panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 16px 16px 13px;
+        border-bottom: 2px solid var(--line);
+        background: var(--yellow);
+      }
+
+      .panel-head h2,
+      .section-title,
+      .output-head h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 900;
+      }
+
+      .status {
+        border: 1.5px solid var(--line);
+        border-radius: 999px;
+        padding: 5px 9px;
+        background: var(--paper);
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .form {
+        display: grid;
+        gap: 14px;
+        padding: 16px;
+      }
+
+      .field {
+        display: grid;
+        gap: 7px;
+      }
+
+      .field label {
+        font-size: 13px;
+        font-weight: 900;
+      }
+
+      .field input,
+      .field textarea,
+      .field select {
+        width: 100%;
+        border: 1.5px solid var(--line);
+        border-radius: 8px;
+        background: var(--paper);
+        color: var(--ink);
+        outline: none;
+      }
+
+      .field input,
+      .field select {
+        min-height: 42px;
+        padding: 0 11px;
+      }
+
+      .field textarea {
+        min-height: 86px;
+        padding: 10px 11px;
+        resize: vertical;
+        line-height: 1.45;
+      }
+
+      .two {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .mode-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 7px;
+      }
+
+      .mode-row button {
+        min-height: 38px;
+        padding: 0 8px;
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .mode-row button.active {
+        background: var(--mint);
+        box-shadow: 2px 2px 0 var(--line);
+      }
+
+      .generate {
+        min-height: 50px;
+        background: var(--red);
+        color: var(--white);
+        font-size: 15px;
+        font-weight: 950;
+      }
+
+      .workspace {
+        display: grid;
+        gap: 18px;
+      }
+
+      .idea-bank {
+        overflow: hidden;
+      }
+
+      .story-lab {
+        overflow: hidden;
+      }
+
+      .story-form {
+        display: grid;
+        gap: 14px;
+        padding: 16px;
+      }
+
+      .story-form textarea {
+        width: 100%;
+        min-height: 220px;
+        border: 1.5px solid var(--line);
+        border-radius: 8px;
+        background: var(--paper);
+        padding: 12px;
+        color: var(--ink);
+        line-height: 1.55;
+        resize: vertical;
+        outline: none;
+      }
+
+      .story-helper {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .story-helper span {
+        border: 1.5px solid var(--line);
+        border-radius: 8px;
+        background: var(--paper);
+        padding: 9px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 900;
+        line-height: 1.35;
+      }
+
+      .story-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .story-actions button {
+        min-height: 42px;
+        padding: 0 14px;
+        font-weight: 950;
+      }
+
+      .story-actions .primary {
+        background: var(--red);
+        color: var(--white);
+      }
+
+      .draft-card {
+        border: 1.5px solid var(--line);
+        border-radius: 8px;
+        background: var(--paper);
+        padding: 12px;
+      }
+
+      .draft-card h3 {
+        margin: 0 0 8px;
+        font-size: 15px;
+        font-weight: 950;
+      }
+
+      .draft-card p,
+      .draft-card li {
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 800;
+        line-height: 1.45;
+      }
+
+      .draft-card p {
+        margin: 0;
+      }
+
+      .draft-card ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+
+      .bank-tools {
+        display: grid;
+        grid-template-columns: minmax(180px, 1fr) 180px;
+        gap: 10px;
+        padding: 14px 16px;
+        border-bottom: 2px solid var(--line);
+        background: rgba(255, 253, 247, 0.72);
+      }
+
+      .bank-tools input,
+      .bank-tools select {
+        min-height: 40px;
+        border: 1.5px solid var(--line);
+        border-radius: 8px;
+        background: var(--paper);
+        padding: 0 11px;
+        color: var(--ink);
+        outline: none;
+      }
+
+      .theme-rail {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 8px;
+        padding: 14px 16px 0;
+        background: rgba(255, 253, 247, 0.72);
+      }
+
+      .theme-chip {
+        min-height: 70px;
+        padding: 10px;
+        text-align: left;
+        background: var(--paper);
+      }
+
+      .theme-chip.active {
+        background: var(--mint);
+        box-shadow: 3px 3px 0 var(--line);
+      }
+
+      .theme-chip strong,
+      .theme-chip span {
+        display: block;
+      }
+
+      .theme-chip strong {
+        font-size: 13px;
+        line-height: 1.2;
+      }
+
+      .theme-chip span {
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1.28;
+      }
+
+      .idea-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        padding: 16px;
+      }
+
+      .idea-card {
+        display: grid;
+        gap: 10px;
+        align-content: start;
+        min-height: 184px;
+        border: 1.5px solid var(--line);
+        border-radius: 8px;
+        background: var(--paper);
+        padding: 12px;
+      }
+
+      .idea-card.active {
+        background: #f8e7a6;
+        box-shadow: 3px 3px 0 var(--line);
+      }
+
+      .idea-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .idea-top strong {
+        font-size: 15px;
+        line-height: 1.25;
+      }
+
+      .idea-score {
+        flex: 0 0 auto;
+        border: 1.5px solid var(--line);
+        border-radius: 999px;
+        background: var(--mint);
+        padding: 4px 7px;
+        font-size: 11px;
+        font-weight: 950;
+      }
+
+      .idea-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.42;
+      }
+
+      .idea-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+      }
+
+      .idea-tags span {
+        border: 1px solid var(--soft-line);
+        border-radius: 999px;
+        background: #fff;
+        padding: 3px 7px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 900;
+      }
+
+      .idea-card button {
+        min-height: 36px;
+        margin-top: auto;
+        font-size: 12px;
+        font-weight: 950;
+        background: var(--white);
+      }
+
+      .theme-note {
+        margin: 0;
+        padding: 0 16px 12px;
+        color: var(--muted);
+        background: rgba(255, 253, 247, 0.72);
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.45;
+      }
+
+      .series-map {
+        display: grid;
+        grid-template-columns: 1fr 1.2fr;
+        gap: 10px;
+        padding: 0 16px 16px;
+        border-bottom: 2px solid var(--line);
+        background: rgba(255, 253, 247, 0.72);
+      }
+
+      .series-box {
+        border: 1.5px solid var(--line);
+        border-radius: 8px;
+        background: var(--white);
+        padding: 12px;
+      }
+
+      .series-box h3,
+      .series-box h4 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 950;
+      }
+
+      .series-box p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.45;
+      }
+
+      .series-list {
+        display: grid;
+        gap: 7px;
+        margin-top: 10px;
+      }
+
+      .series-list span {
+        display: block;
+        border: 1px solid var(--soft-line);
+        border-radius: 8px;
+        background: var(--paper);
+        padding: 7px 9px;
+        font-size: 12px;
+        font-weight: 900;
+        line-height: 1.35;
+      }
+
+      .preview {
+        padding: 16px;
+      }
+
+      .comic-sheet {
+        max-width: 760px;
+        margin: 0 auto;
+        border: 3px solid var(--line);
+        border-radius: 6px;
+        background: var(--paper);
+        padding: 18px;
+      }
+
+      .comic-title {
+        text-align: center;
+        border-bottom: 2px solid var(--line);
+        padding-bottom: 12px;
+        margin-bottom: 14px;
+      }
+
+      .comic-title strong {
+        display: block;
+        font-size: clamp(28px, 5vw, 48px);
+        line-height: 1.05;
+      }
+
+      .comic-title span {
+        display: block;
+        margin-top: 6px;
+        color: var(--muted);
+        font-weight: 900;
+      }
+
+      .comic-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .comic-grid.longform {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .comic-panel {
+        min-height: 232px;
+        border: 2px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .comic-grid.longform .comic-panel {
+        min-height: 210px;
+      }
+
+      .panel-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .panel-num {
+        width: 28px;
+        height: 28px;
+        display: grid;
+        place-items: center;
+        border: 1.5px solid var(--line);
+        border-radius: 999px;
+        background: var(--yellow);
+        font-size: 13px;
+        font-weight: 950;
+      }
+
+      .panel-label {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 900;
+        text-align: right;
+      }
+
+      .sketch {
+        flex: 1;
+        min-height: 88px;
+        border: 1.5px dashed var(--soft-line);
+        border-radius: 8px;
+        background:
+          radial-gradient(circle at 30% 28%, rgba(245, 204, 93, 0.28), transparent 18%),
+          radial-gradient(circle at 78% 68%, rgba(122, 181, 214, 0.22), transparent 24%),
+          #fffdfa;
+        color: var(--muted);
+        padding: 10px;
+        text-align: center;
+        font-size: 13px;
+        font-weight: 800;
+        line-height: 1.35;
+      }
+
+      .sketch-caption {
+        display: block;
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 900;
+        line-height: 1.28;
+      }
+
+      .visual-card {
+        position: relative;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        gap: 8px;
+        min-height: 190px;
+        overflow: hidden;
+        border: 2px solid var(--line);
+        border-radius: 8px;
+        background: #f5efe3;
+        padding: 10px;
+        text-align: left;
+      }
+
+      .visual-card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0)),
+          radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.62), transparent 18%);
+        pointer-events: none;
+      }
+
+      .visual-card.shopping,
+      .visual-card.protein {
+        background: #f8e0b8;
+      }
+
+      .visual-card.bug {
+        background: #d7eadf;
+      }
+
+      .visual-card.noise,
+      .visual-card.construction {
+        background: #e2e2dc;
+      }
+
+      .visual-card.office {
+        background: #dbe8f0;
+      }
+
+      .visual-card.dating {
+        background: #f4d5dc;
+      }
+
+      .visual-card.family {
+        background: #f2e0c8;
+      }
+
+      .visual-card.money {
+        background: #f3e3a4;
+      }
+
+      .visual-card.commute {
+        background: #d7e7ee;
+      }
+
+      .visual-top,
+      .visual-stage,
+      .visual-bottom {
+        position: relative;
+        z-index: 1;
+      }
+
+      .visual-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .visual-scene {
+        border: 1.5px solid var(--line);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+        padding: 5px 9px;
+        font-size: 11px;
+        font-weight: 950;
+      }
+
+      .visual-camera {
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 950;
+      }
+
+      .visual-stage {
+        min-height: 108px;
+      }
+
+      .visual-mascot {
+        position: absolute;
+        left: 50%;
+        bottom: 4px;
+        width: 62px;
+        height: 76px;
+        transform: translateX(-50%);
+      }
+
+      .visual-mascot::before {
+        content: "";
+        position: absolute;
+        left: 8px;
+        top: 17px;
+        width: 46px;
+        height: 50px;
+        border: 3px solid var(--line);
+        border-radius: 50% 50% 45% 45%;
+        background: #fff;
+      }
+
+      .visual-mascot::after {
+        content: "";
+        position: absolute;
+        left: 7px;
+        top: 0;
+        width: 48px;
+        height: 24px;
+        border: 3px solid var(--line);
+        border-radius: 28px 28px 8px 8px;
+        background: var(--yellow);
+        box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.08);
+      }
+
+      .visual-face {
+        position: absolute;
+        left: 20px;
+        top: 42px;
+        z-index: 2;
+        width: 24px;
+        height: 10px;
+        border-top: 3px solid var(--line);
+        border-bottom: 3px solid var(--line);
+      }
+
+      .visual-face::after {
+        content: "";
+        position: absolute;
+        left: 9px;
+        top: 10px;
+        width: 8px;
+        border-top: 3px solid var(--line);
+      }
+
+      .visual-prop {
+        position: absolute;
+        display: grid;
+        place-items: center;
+        border: 2px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.78);
+        color: var(--ink);
+        font-size: 30px;
+        font-weight: 950;
+        box-shadow: 3px 3px 0 rgba(23, 23, 23, 0.18);
+      }
+
+      .prop-main {
+        left: 12px;
+        bottom: 10px;
+        width: 62px;
+        height: 54px;
+      }
+
+      .prop-side {
+        right: 12px;
+        top: 26px;
+        width: 58px;
+        height: 50px;
+      }
+
+      .prop-wide {
+        right: 8px;
+        bottom: 12px;
+        width: 78px;
+        height: 32px;
+        font-size: 16px;
+      }
+
+      .visual-lines {
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(90deg, transparent 0 44%, rgba(23, 23, 23, 0.16) 44% 45%, transparent 45%),
+          linear-gradient(180deg, transparent 0 74%, rgba(23, 23, 23, 0.16) 74% 75%, transparent 75%);
+        opacity: 0.55;
+      }
+
+      .visual-note {
+        position: relative;
+        z-index: 1;
+        margin: 0;
+        color: var(--ink);
+        font-size: 12px;
+        font-weight: 950;
+        line-height: 1.35;
+      }
+
+      .bubble {
+        border: 1.5px solid var(--line);
+        border-radius: 18px;
+        padding: 9px 11px;
+        background: var(--white);
+        font-size: 14px;
+        font-weight: 900;
+        line-height: 1.32;
+      }
+
+      .small-note {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.35;
+      }
+
+      .outputs {
+        overflow: hidden;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 0;
+        overflow-x: auto;
+        border-bottom: 2px solid var(--line);
+        background: var(--stone);
+      }
+
+      .tabs button {
+        flex: 0 0 auto;
+        min-height: 48px;
+        border: 0;
+        border-right: 2px solid var(--line);
+        border-radius: 0;
+        background: transparent;
+        padding: 0 15px;
+        font-weight: 950;
+      }
+
+      .tabs button:hover {
+        transform: none;
+        box-shadow: none;
+        background: rgba(255, 255, 255, 0.52);
+      }
+
+      .tabs button.active {
+        background: var(--mint);
+      }
+
+      .output-body {
+        display: grid;
+        gap: 16px;
+        padding: 16px;
+      }
+
+      .output-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: keep-all;
+        overflow-wrap: anywhere;
+        border: 1.5px solid var(--line);
+        border-radius: 8px;
+        background: #161514;
+        color: #fff9ed;
+        padding: 16px;
+        line-height: 1.62;
+        font-size: 14px;
+      }
+
+      .saved-list {
+        display: grid;
+        gap: 8px;
+        max-height: 260px;
+        overflow: auto;
+      }
+
+      .saved-item {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        align-items: center;
+        border: 1.5px solid var(--line);
+        border-radius: 8px;
+        background: var(--paper);
+        padding: 10px;
+      }
+
+      .saved-item strong {
+        display: block;
+        font-size: 13px;
+      }
+
+      .saved-item span {
+        display: block;
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .saved-item button {
+        min-height: 34px;
+        padding: 0 10px;
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      @media (max-width: 1060px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        .controls {
+          position: static;
+        }
+
+        .idea-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .theme-rail {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .story-helper {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .series-map {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .app {
+          width: min(100% - 20px, 1440px);
+          padding-top: 14px;
+        }
+
+        .topbar,
+        .output-head,
+        .phase-book {
+          display: grid;
+        }
+
+        .top-actions {
+          justify-content: stretch;
+        }
+
+        .top-actions button {
+          flex: 1;
+        }
+
+        .two,
+        .mode-row,
+        .phase-nav,
+        .story-helper,
+        .bank-tools,
+        .theme-rail,
+        .series-map,
+        .idea-grid,
+        .comic-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .phase-controls {
+          justify-content: space-between;
+        }
+
+        .comic-grid.longform {
+          grid-template-columns: 1fr;
+        }
+
+        .comic-sheet {
+          padding: 12px;
+        }
+
+        .comic-panel {
+          min-height: 210px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div class="brand">
+          <h1>채굴이의 싱달러 채굴일지<br />제작실</h1>
+          <p>해외 외노자 사연을 캐서 4~16컷 콘티, 이미지 프롬프트, 인스타 캡션, X 글까지 정리합니다.</p>
+        </div>
+        <div class="top-actions">
+          <button id="sampleBtn" type="button">예시 사연</button>
+          <button id="saveBtn" type="button">소재 저장</button>
+          <button id="downloadBtn" type="button">TXT 다운로드</button>
+        </div>
+      </header>
+
+      <section class="phase-book" aria-label="제작 단계">
+        <div class="phase-nav" id="phaseNav">
+          <button class="phase-btn active" type="button" data-phase="0">
+            1. 이야기 입력
+            <span>아내가 원문 사연 작성</span>
+          </button>
+          <button class="phase-btn" type="button" data-phase="1">
+            2. 초안 확인
+            <span>다듬은 내용 확인/수정</span>
+          </button>
+          <button class="phase-btn" type="button" data-phase="2">
+            3. 콘티 확인
+            <span>컷 흐름과 펀치라인 점검</span>
+          </button>
+          <button class="phase-btn" type="button" data-phase="3">
+            4. 복사/저장
+            <span>프롬프트, 캡션, X 글 복사</span>
+          </button>
+        </div>
+        <div class="phase-controls">
+          <button id="prevPhaseBtn" type="button">이전</button>
+          <span class="phase-label" id="phaseLabel">1 / 4</span>
+          <button id="nextPhaseBtn" type="button">다음</button>
+        </div>
+      </section>
+
+      <section class="grid">
+        <aside class="panel controls" data-phase-section="1">
+          <div class="panel-head">
+            <h2>다듬은 초안</h2>
+            <span class="status" id="status">준비됨</span>
+          </div>
+          <form class="form" id="ideaForm">
+            <div class="field">
+              <label for="toonName">툰 이름</label>
+              <input id="toonName" name="toonName" value="채굴이의 싱달러 채굴일지" />
+            </div>
+
+            <div class="two">
+              <div class="field">
+                <label for="series">코너</label>
+                <input id="series" name="series" value="싱가포르 채굴일지" />
+              </div>
+              <div class="field">
+                <label for="day">회차</label>
+                <input id="day" name="day" value="D+370" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="topic">이번 편</label>
+              <input id="topic" name="topic" value="싱가포르 출근길 편" />
+            </div>
+
+            <div class="two">
+              <div class="field">
+                <label for="category">카테고리</label>
+                <select id="category" name="category">
+                  <option>싱가포르 생활</option>
+                  <option>돈과 물가</option>
+                  <option>쇼핑/소비</option>
+                  <option>음식</option>
+                  <option>회사 생활</option>
+                  <option>연애</option>
+                  <option>가족 문화</option>
+                  <option>주거 생활</option>
+                  <option>생활 적응</option>
+                  <option>외노자 감성</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="character">캐릭터</label>
+                <select id="character" name="character">
+                  <option>채굴이</option>
+                  <option>싱광이</option>
+                  <option>달러콩</option>
+                  <option>외노콩</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="two">
+              <div class="field">
+                <label for="panelCount">분량</label>
+                <select id="panelCount" name="panelCount">
+                  <option value="4">4컷: 한 방 공감</option>
+                  <option value="8">8컷: 짧은 사연</option>
+                  <option value="12">12컷: 캐러셀 사연</option>
+                  <option value="16">16컷: 긴 제보툰</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="storySource">출처</label>
+                <select id="storySource" name="storySource">
+                  <option>내 이야기</option>
+                  <option>시청자 제보</option>
+                  <option>댓글 각색</option>
+                  <option>상상+공감</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>톤</label>
+              <div class="mode-row" id="toneRow">
+                <button class="active" type="button" data-tone="병맛">병맛</button>
+                <button type="button" data-tone="담백">담백</button>
+                <button type="button" data-tone="짠함">짠함</button>
+                <button type="button" data-tone="정보형">정보형</button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="koreaNotes">공감 포인트</label>
+              <textarea id="koreaNotes" name="koreaNotes">출근길부터 이미 체력이 깎임
+커피 없으면 하루가 시작이 안 됨
+편한 점도 있는데 결국 회사에 도착함</textarea>
+            </div>
+
+            <div class="field">
+              <label for="singaporeNotes">싱가포르 디테일</label>
+              <textarea id="singaporeNotes" name="singaporeNotes">MRT는 작고 빠르고 효율적임
+밖은 덥고 사무실은 추움
+습도가 먼저 출근함</textarea>
+            </div>
+
+            <div class="field">
+              <label for="punchline">마지막 펀치라인</label>
+              <textarea id="punchline" name="punchline">결론: 싱가포르 생활은 효율적인데 내 영혼도 같이 효율적으로 닳음.</textarea>
+            </div>
+
+            <div class="field">
+              <label for="storyNotes">사연 원본 / 내 이야기 메모</label>
+              <textarea id="storyNotes" name="storyNotes">싱가포르 온 지 370일. 처음엔 MRT가 작고 효율적이라 좋았다.
+근데 아무리 효율적이어도 결국 회사에 빨리 도착한다는 사실을 깨달았다.
+커피를 들고 있어도 출근은 출근이었다.</textarea>
+            </div>
+
+            <div class="field">
+              <label for="visualMotif">반복 소품</label>
+              <input id="visualMotif" name="visualMotif" value="아이스 커피, 광부 헬멧, S$ 코인, 흐릿한 머라이언" />
+            </div>
+
+            <button class="generate" type="submit">오케이, 콘티 보기</button>
+          </form>
+        </aside>
+
+        <section class="workspace">
+          <section class="panel story-lab" data-phase-section="0">
+            <div class="panel-head">
+              <h2>이야기 입력</h2>
+              <span class="status">원문 사연</span>
+            </div>
+            <div class="story-form">
+              <div class="field">
+                <label for="rawStoryInput">아내가 적는 이야기</label>
+                <textarea id="rawStoryInput" placeholder="오늘 있었던 일을 그냥 편하게 적어주세요. 예: 쇼피에서 단백질을 사려다가 가격 보고 멈춤. 한국에서는 쿠팡으로 금방 샀는데 여기서는 배송, 가격, 선택지가 다 애매했다. 결국 장바구니만 보다가 커피 마심."></textarea>
+              </div>
+              <div class="story-helper">
+                <span>무슨 일이 있었는지</span>
+                <span>왜 웃기거나 빡쳤는지</span>
+                <span>싱가포르 디테일</span>
+                <span>마지막 감정 한 줄</span>
+              </div>
+              <div class="story-actions">
+                <button class="primary" id="polishStoryBtn" type="button">초안 다듬기</button>
+                <button id="sampleStoryBtn" type="button">예시 사연 넣기</button>
+              </div>
+              <div class="draft-card" id="draftPreview" hidden>
+                <h3>다듬은 방향</h3>
+                <p>초안이 준비되면 여기서 한 줄 요약을 보여줍니다.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel idea-bank" data-phase-section="99">
+            <div class="panel-head">
+              <h2>소재 주머니</h2>
+              <span class="status" id="ideaPickCount">0개 후보</span>
+            </div>
+            <div class="theme-rail" id="themeRail"></div>
+            <p class="theme-note" id="themeNote">큰 주제를 먼저 고른 뒤, 소재 카드를 하나씩 골라 제작 단계로 넘깁니다.</p>
+            <div class="series-map" id="seriesMap"></div>
+            <div class="bank-tools">
+              <input id="ideaSearch" type="search" placeholder="소재 검색: 쇼피, 벌레, 소음, 단백질..." />
+              <select id="ideaFilter">
+                <option value="전체">전체 세부 카테고리</option>
+                <option value="쇼핑/소비">쇼핑/소비</option>
+                <option value="주거 생활">주거 생활</option>
+                <option value="생활 적응">생활 적응</option>
+                <option value="회사 생활">회사 생활</option>
+                <option value="연애">연애</option>
+                <option value="가족 문화">가족 문화</option>
+                <option value="돈과 물가">돈과 물가</option>
+                <option value="외노자 감성">외노자 감성</option>
+              </select>
+            </div>
+            <div class="idea-grid" id="ideaGrid"></div>
+          </section>
+
+          <section class="panel preview" data-phase-section="2">
+            <div class="comic-sheet" id="comicPreview"></div>
+          </section>
+
+          <section class="panel outputs" data-phase-section="3">
+            <div class="tabs" id="tabs"></div>
+            <div class="output-body">
+              <div class="output-head">
+                <h3 id="outputTitle">4컷 콘티</h3>
+                <button class="copy-btn" id="copyBtn" type="button">복사</button>
+              </div>
+              <pre id="outputText"></pre>
+            </div>
+          </section>
+
+          <section class="panel" data-phase-section="3">
+            <div class="panel-head">
+              <h2>저장한 소재</h2>
+              <span class="status" id="savedCount">0개</span>
+            </div>
+            <div class="output-body">
+              <div class="saved-list" id="savedList"></div>
+            </div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const form = document.querySelector("#ideaForm");
+      const statusEl = document.querySelector("#status");
+      const previewEl = document.querySelector("#comicPreview");
+      const tabsEl = document.querySelector("#tabs");
+      const outputTitleEl = document.querySelector("#outputTitle");
+      const outputTextEl = document.querySelector("#outputText");
+      const copyBtn = document.querySelector("#copyBtn");
+      const saveBtn = document.querySelector("#saveBtn");
+      const sampleBtn = document.querySelector("#sampleBtn");
+      const downloadBtn = document.querySelector("#downloadBtn");
+      const savedListEl = document.querySelector("#savedList");
+      const savedCountEl = document.querySelector("#savedCount");
+      const toneRow = document.querySelector("#toneRow");
+      const ideaGridEl = document.querySelector("#ideaGrid");
+      const ideaSearchEl = document.querySelector("#ideaSearch");
+      const ideaFilterEl = document.querySelector("#ideaFilter");
+      const ideaPickCountEl = document.querySelector("#ideaPickCount");
+      const themeRailEl = document.querySelector("#themeRail");
+      const themeNoteEl = document.querySelector("#themeNote");
+      const seriesMapEl = document.querySelector("#seriesMap");
+      const phaseNavEl = document.querySelector("#phaseNav");
+      const phaseLabelEl = document.querySelector("#phaseLabel");
+      const prevPhaseBtn = document.querySelector("#prevPhaseBtn");
+      const nextPhaseBtn = document.querySelector("#nextPhaseBtn");
+      const gridEl = document.querySelector(".grid");
+      const workspaceEl = document.querySelector(".workspace");
+      const controlsEl = document.querySelector(".controls");
+      const phaseSections = [...document.querySelectorAll("[data-phase-section]")];
+      const rawStoryInput = document.querySelector("#rawStoryInput");
+      const polishStoryBtn = document.querySelector("#polishStoryBtn");
+      const sampleStoryBtn = document.querySelector("#sampleStoryBtn");
+      const draftPreviewEl = document.querySelector("#draftPreview");
+
+      const tabLabels = {
+        storyboard: "4컷 콘티",
+        imagePrompt: "이미지 프롬프트",
+        textlessPrompt: "텍스트 없는 프롬프트",
+        instagram: "인스타 캡션",
+        twitter: "X 글",
+        submission: "사연 제보폼",
+        production: "작업 체크"
+      };
+
+      const themes = [
+        {
+          id: "전체",
+          label: "전체",
+          desc: "모든 소재",
+          note: "전체 소재를 훑어보고 오늘 만들기 쉬운 원석을 고릅니다."
+        },
+        {
+          id: "직장인",
+          label: "직장인",
+          desc: "회사, 비자, 회의",
+          note: "회의, 보고, 퇴근 후 알림, 비자, 다국적 팀 같은 직장인 공감 소재입니다."
+        },
+        {
+          id: "연애",
+          label: "연애",
+          desc: "데이트, 앱, 장거리",
+          note: "해외살이에서 생기는 데이트앱, 국제연애, 장거리, 언어 차이 소재입니다."
+        },
+        {
+          id: "가족 문화",
+          label: "가족 문화",
+          desc: "부모님, 명절, 결혼식",
+          note: "부모님 영상통화, 명절, 결혼식 불참, 효도와 독립 사이 감정 소재입니다."
+        },
+        {
+          id: "돈",
+          label: "돈",
+          desc: "월세, 물가, 환율",
+          note: "싱달러를 캐도 월세와 식비가 다시 가져가는 돈 관련 소재입니다."
+        },
+        {
+          id: "생활·쇼핑·주거",
+          label: "생활·쇼핑·주거",
+          desc: "쇼피, 벌레, 소음",
+          note: "Shopee/Coupang, 단백질값, 벌레, 리노베이션, 소음, 느린 공사, 로컬 생활 고수 소재입니다."
+        }
+      ];
+
+      const seriesPlans = {
+        "전체": {
+          name: "채굴이 유니버스",
+          promise: "싱가포르에서 시작하지만, 해외 외노자라면 누구나 자기 사연을 넣을 수 있는 장기 연재 구조.",
+          format: "큰 주제 서랍을 고르고, 그 안에서 4컷 한 방 공감 또는 8~16컷 사연툰으로 확장.",
+          gag: "채굴이는 늘 S$를 캐지만, 월세/쇼핑/회사/외로움이 더 빨리 캐간다.",
+          seeds: ["직장인 광산", "연애 광산", "가족 문화 광산", "돈 광산", "생활·쇼핑·주거 광산"]
+        },
+        "직장인": {
+          name: "외노자 출근 광산",
+          promise: "나라가 달라도 출근은 싫고, 회사는 각자 다른 방식으로 사람을 말린다.",
+          format: "싱가포르 직장 적응기 4/8컷. 다국적 회의, Can or not, 비자, 퇴근 후 알림을 반복 코너화.",
+          gag: "싱가포르 회사도 월요일 9시는 똑같이 재난.",
+          seeds: ["회의 발언 편", "Can or not? 편", "비자 갱신 편", "퇴근 후 메신저 편", "다국적 회의 리스닝 편"]
+        },
+        "연애": {
+          name: "외노자 연애 튜토리얼",
+          promise: "연애를 하려 했는데 언어, 문화, 거리, 앱 알고리즘까지 새 퀘스트가 열린다.",
+          format: "데이트앱/소개팅/국제연애/장거리 에피소드를 8컷 사연툰으로 운영.",
+          gag: "설렘보다 번역기가 먼저 켜짐.",
+          seeds: ["데이트앱 영어회화 편", "Where are you from? 편", "MRT 중간지점 데이트 편", "장거리 시차 편", "계산 문화 편"]
+        },
+        "가족 문화": {
+          name: "집에서 온 영상통화",
+          promise: "멀리 나와보니 제일 평범했던 가족의 말이 갑자기 크게 들린다.",
+          format: "웃긴 가족 통화로 시작해서 마지막에 살짝 울컥하는 8~12컷 감성툰.",
+          gag: "밥 먹었어? 한마디가 해외에서는 거의 귀국 버튼.",
+          seeds: ["부모님 영상통화 편", "명절 혼밥 편", "친구 결혼식 못 감 편", "언제 돌아와? 편", "한국 가면 여행자 편"]
+        },
+        "돈": {
+          name: "싱달러 채굴 손익계산서",
+          promise: "월급은 외화라 멋있는데, 지출도 외화라 바로 현실이 된다.",
+          format: "월급/월세/환율/식비/단백질값을 4컷 펀치 또는 비교형 카드로 운영.",
+          gag: "S$는 캐자마자 집주인과 마트로 자동이체.",
+          seeds: ["월세 현실 편", "환율 송금 도박 편", "단백질값 편", "한식당 가격 편", "커피값 누수 편"]
+        },
+        "생활·쇼핑·주거": {
+          name: "싱가포르 생활 던전",
+          promise: "쇼핑, 벌레, 소음, 공사, 로컬 생활력까지 외노자의 일상 난이도를 한 칸씩 공략한다.",
+          format: "생활 불편을 병맛 관찰툰으로. 소재 하나당 4컷 한 방 또는 8컷 캐러셀.",
+          gag: "적응한 줄 알면 다음 던전 문이 열린다.",
+          seeds: ["쇼피 배송 기다림 편", "벌레 룸메이트 편", "리노베이션 소음 편", "공사 장기연재물 편", "동네 고수님들 편"]
+        }
+      };
+
+      const samples = [
+        {
+          series: "싱가포르 채굴일지",
+          toonName: "채굴이의 싱달러 채굴일지",
+          day: "D+370",
+          topic: "싱가포르 출근길 편",
+          category: "싱가포르 생활",
+          character: "채굴이",
+          panelCount: "4",
+          storySource: "내 이야기",
+          tone: "병맛",
+          koreaNotes: "다들 향수 뿌리고 좋은 냄새 남\n넓어서 헤맬 수 있음\n상점 많음",
+          singaporeNotes: "다양한 사람 체취. 덥고 습하니 말 다함\n작아서 좋음. 출구 4개, 환승 30초\n상점 거의 없음",
+          punchline: "근데 둘 다 출근하기 싫은 건 똑같음.",
+          storyNotes: "싱가포르 온 지 370일. 처음엔 MRT가 작고 효율적이라 좋았다.\n근데 아무리 효율적이어도 결국 회사에 빨리 도착한다는 사실을 깨달았다.\n커피를 들고 있어도 출근은 출근이었다.",
+          visualMotif: "아이스 커피, 광부 헬멧, S$ 코인, 흐릿한 머라이언"
+        },
+        {
+          series: "싱가포르 채굴일지",
+          toonName: "채굴이의 싱달러 채굴일지",
+          day: "D+371",
+          topic: "점심값 편",
+          category: "돈과 물가",
+          character: "채굴이",
+          panelCount: "8",
+          storySource: "내 이야기",
+          tone: "짠함",
+          koreaNotes: "회사 근처 백반이 은근 든든함\n커피까지 사도 마음의 데미지는 적음\n그래도 월급날 전엔 긴장됨",
+          singaporeNotes: "호커센터는 싸고 좋음\n한식당 김치찌개는 갑자기 프리미엄 자산\n아이스 커피를 포기 못 해서 예산이 샘",
+          punchline: "절약하려고 나갔는데 카야토스트랑 커피가 또 나를 불렀다.",
+          storyNotes: "월급을 S$로 받으면 잠깐 부자가 된 기분이 든다.\n하지만 점심을 한식당에서 먹고 커피를 사면 숫자가 빨리 줄어든다.\n그래서 호커센터를 가지만 거기서도 커피는 못 참는다.",
+          visualMotif: "호커센터 쟁반, 아이스 kopi, S$ 동전, 텅 빈 지갑"
+        },
+        {
+          series: "싱가포르 외노자 생존기",
+          toonName: "채굴이의 싱달러 채굴일지",
+          day: "D+372",
+          topic: "비자 갱신 편",
+          category: "회사 생활",
+          character: "채굴이",
+          panelCount: "12",
+          storySource: "내 이야기",
+          tone: "담백",
+          koreaNotes: "비자 갱신 시즌엔 작은 메일도 크게 느껴짐\n회사 안정성보다 체류 안정성이 먼저 떠오름\n승인 메일 전까지 커피 맛이 흐림",
+          singaporeNotes: "외노자는 비자 메일 하나에 심장 박동 변함\nEP 갱신 시즌엔 모든 알림이 무서움\n승인 메일 오면 그날은 치킨 가능",
+          punchline: "나의 직장 안정성은 회사가 아니라 이메일 제목에 달려 있다.",
+          storyNotes: "비자 갱신 시즌에는 메일 알림음이 무섭다.\n평소에는 아무렇지 않던 HR 메일도 갑자기 운명의 문서처럼 보인다.\n승인 메일을 받으면 그날 하루는 회사가 조금 예뻐 보인다.",
+          visualMotif: "노트북, MOM 이메일, 광부 헬멧, 식은 커피"
+        }
+      ];
+
+      const ideaBank = [
+        {
+          id: "office-culture",
+          theme: "직장인",
+          title: "싱가포르 직장 적응기",
+          category: "회사 생활",
+          score: "직장 공감",
+          summary: "다국적 회의, 싱글리시, Can or not, 캘린더 압박을 채굴이 시점으로 그린다.",
+          tags: ["회의", "눈치", "싱글리시", "보고"],
+          data: {
+            day: "D+371",
+            topic: "직장 문화 차이 편",
+            category: "회사 생활",
+            panelCount: "8",
+            tone: "병맛",
+            koreaNotes: "회의실에서 영어보다 억양과 속도가 먼저 들어옴\nCan or not? 한마디에 갑자기 결정이 빨라짐\n퇴근 후에도 캘린더와 이메일이 마음을 붙잡음",
+            singaporeNotes: "다문화 팀이라 영어, 억양, 싱글리시가 한 회의에 다 모임\nCan or not? 으로 의사결정이 빠른 편\n회식은 적은데 캘린더와 이메일은 매우 진심임",
+            punchline: "결론: 싱가포르 회사도 월요일 9시는 커피 없이는 입장 불가임.",
+            storyNotes: "싱가포르 회사에서는 영어만 들으면 되는 줄 알았다.\n근데 억양, 속도, 싱글리시, 캘린더 알림이 같이 들어온다.\n결국 회의 준비물은 노트북보다 커피였다.",
+            visualMotif: "아이스 커피, 광부 헬멧, 노트북, 회의실, 캘린더 알림, S$ 코인"
+          }
+        },
+        {
+          id: "visa-email",
+          theme: "직장인",
+          title: "비자 메일 하나에 심장 채굴",
+          category: "회사 생활",
+          score: "외노자 코어",
+          summary: "EP/비자 갱신 메일 제목 하나에 외노자 심장이 먼저 반응한다.",
+          tags: ["비자", "EP", "HR", "메일"],
+          data: {
+            day: "D+378",
+            topic: "비자 갱신 편",
+            category: "회사 생활",
+            panelCount: "8",
+            tone: "짠함",
+            koreaNotes: "비자 갱신 시즌엔 작은 메일도 크게 느껴짐\n회사 안정성보다 체류 안정성이 먼저 떠오름\n승인 메일 전까지 커피 맛이 흐림",
+            singaporeNotes: "외노자는 비자 메일 하나에 심장 박동 변함\nEP 갱신 시즌엔 HR 알림이 운명처럼 보임\n승인 메일 오면 그날은 치킨 가능",
+            punchline: "나의 직장 안정성은 회사가 아니라 이메일 제목에 달려 있다.",
+            storyNotes: "비자 갱신 시즌에는 평범한 메일 알림도 무섭다.\nHR에서 온 메일 제목을 보기 전까지 커피 맛이 안 난다.\n승인 메일을 받으면 그날 하루는 회사가 조금 예뻐 보인다.",
+            visualMotif: "노트북, HR 이메일, MOM 서류, 광부 헬멧, 식은 커피"
+          }
+        },
+        {
+          id: "shopee-coupang-protein",
+          theme: "생활·쇼핑·주거",
+          title: "쇼피 배송과 단백질값",
+          category: "쇼핑/소비",
+          score: "도달 넓음",
+          summary: "Shopee 배송 기다림, 단백질 가격, 식비 충격을 싱가포르 생활감으로 묶는다.",
+          tags: ["Shopee", "배송", "프로틴", "지갑"],
+          data: {
+            day: "D+372",
+            topic: "쇼핑 문화 차이 편",
+            category: "쇼핑/소비",
+            panelCount: "8",
+            tone: "병맛",
+            koreaNotes: "배송 예정일을 하루에 세 번 확인함\n단백질을 사려다 가격표 앞에서 멈춤\n싸게 사려다가 배송비와 시간을 같이 계산함",
+            singaporeNotes: "쇼피는 싸 보이는데 배송일이 갑자기 여행을 감\n단백질 식품이 생각보다 너무 비쌈\n건강해지려다가 통장이 먼저 마름",
+            punchline: "결론: 쇼피는 기다리게 하고, 단백질은 지갑을 말리게 함.",
+            storyNotes: "싱가포르에서 Shopee를 켰는데 싸 보이는 물건은 멀리 있고, 단백질은 갑자기 고급 취미가 됐다.\n배송 예정일을 보다가 내가 물건을 기다리는지 인생을 기다리는지 헷갈렸다.\n건강해지려다가 통장이 먼저 마른다.",
+            visualMotif: "아이스 커피, 광부 헬멧, Shopee 택배상자, 배송 추적 화면, 단백질 쉐이크, S$ 코인, 텅 빈 지갑"
+          }
+        },
+        {
+          id: "protein-expensive",
+          theme: "돈",
+          title: "단백질은 헬스가 아니라 재테크",
+          category: "돈과 물가",
+          score: "공감 강함",
+          summary: "몸 만들려고 프로틴을 샀는데, 먼저 벌크업한 건 식비였다는 이야기.",
+          tags: ["단백질", "헬스", "물가", "식비"],
+          data: {
+            day: "D+373",
+            topic: "단백질값 편",
+            category: "돈과 물가",
+            panelCount: "4",
+            tone: "짠함",
+            koreaNotes: "닭가슴살, 계란, 프로틴 선택지가 많음\n헬스 식단이 귀찮아도 어떻게든 가능함\n할인 뜨면 냉동실에 쌓아둠",
+            singaporeNotes: "단백질 식품 가격 보고 정신이 맑아짐\n그릭요거트도 갑자기 고급 취미가 됨\n식단하려다 호커센터로 마음이 흔들림",
+            punchline: "몸 만들기 전에 예산부터 벌크업해야 함.",
+            storyNotes: "운동을 시작하려고 단백질을 찾아봤다.\n가격을 보고 운동 의지가 아니라 경제관념이 생겼다.\n싱가포르에서 건강은 의지보다 예산이었다.",
+            visualMotif: "단백질 쉐이크, 계란, 닭가슴살, S$ 코인, 텅 빈 지갑, 식은 커피"
+          }
+        },
+        {
+          id: "bugs-roommate",
+          theme: "생활·쇼핑·주거",
+          title: "벌레 룸메이트 적응기",
+          category: "생활 적응",
+          score: "댓글 유도",
+          summary: "싱가포르 집에서 벌레와 도마뱀을 마주치며 생활 튜토리얼이 시작된다.",
+          tags: ["벌레", "도마뱀", "집", "습도"],
+          data: {
+            day: "D+374",
+            topic: "벌레 룸메이트 편",
+            category: "생활 적응",
+            panelCount: "8",
+            tone: "병맛",
+            koreaNotes: "집에 벌레 나오면 단체 비상사태\n잡고 나서도 한동안 천장을 봄\n방역 스프레이가 곧 평화",
+            singaporeNotes: "습하고 더워서 생태계가 가까움\n작은 벌레는 일상, 큰 벌레는 면담\n도마뱀은 어느 순간 경비원처럼 보임",
+            punchline: "집 계약서에 룸메이트가 한 명 더 있었나 봄.",
+            storyNotes: "처음 벌레를 봤을 땐 집을 버리고 싶었다.\n두 번째는 소리 질렀고, 세 번째는 휴지를 찾았다.\n어느 날부터는 도마뱀이 벌레를 잡아주길 기대하고 있었다.",
+            visualMotif: "광부 헬멧, 벌레 그림자, 도마뱀 실루엣, 휴지, 커피컵, 방충 스프레이"
+          }
+        },
+        {
+          id: "renovation-noise",
+          theme: "생활·쇼핑·주거",
+          title: "옆집이 내 정신을 리노베이션",
+          category: "주거 생활",
+          score: "소리 공감",
+          summary: "싱가포르 HDB/콘도 생활에서 드릴 소음은 알람보다 성실하다.",
+          tags: ["리노베이션", "소음", "집", "드릴"],
+          data: {
+            day: "D+375",
+            topic: "리노베이션 소음 편",
+            category: "주거 생활",
+            panelCount: "8",
+            tone: "병맛",
+            koreaNotes: "공사 소음도 빡치지만 대체로 기간이 보임\n관리실 공지가 있으면 마음의 준비라도 함\n주말 아침 소음은 인간성을 시험함",
+            singaporeNotes: "아침부터 드릴이 알람 역할을 함\n어느 집인지 모르는데 내 방이 같이 흔들림\n끝난 줄 알면 다른 집이 시작함",
+            punchline: "내 집은 조용한데 옆집이 내 정신을 리노베이션함.",
+            storyNotes: "처음엔 어디서 나는 소리인지 몰랐다.\n그 다음엔 왜 매일 나는지 몰랐다.\n이제는 드릴 소리를 듣고 요일을 맞출 수 있을 것 같다.",
+            visualMotif: "드릴 소리 글자, 커피 흔들림, 광부 헬멧, 벽, HDB 복도, 귀마개"
+          }
+        },
+        {
+          id: "slow-construction",
+          theme: "생활·쇼핑·주거",
+          title: "공사장이 아니라 장기 연재물",
+          category: "주거 생활",
+          score: "관찰형",
+          summary: "매일 보는 펜스와 크레인이 너무 오래 있어서 동네 주민처럼 느껴지는 소재.",
+          tags: ["공사", "건축", "느림", "크레인"],
+          data: {
+            day: "D+376",
+            topic: "공사 속도 편",
+            category: "주거 생활",
+            panelCount: "4",
+            tone: "담백",
+            koreaNotes: "어느 날 보면 건물이 훅 올라가 있음\n공사 속도가 무서울 때가 있음\n지도앱보다 동네가 빨리 바뀜",
+            singaporeNotes: "몇 달째 같은 펜스와 눈 마주침\n크레인은 움직이는데 결과물은 명상 중\n공사장이 동네 배경음악이 됨",
+            punchline: "공사장이 아니라 장기 연재물임.",
+            storyNotes: "출근길에 매일 같은 공사장을 지난다.\n분명 일은 하는 것 같은데 풍경은 그대로다.\n이제는 완공보다 다음 시즌이 궁금하다.",
+            visualMotif: "공사 펜스, 크레인, 안전모, 광부 헬멧, 커피, 달력"
+          }
+        },
+        {
+          id: "local-masters",
+          theme: "생활·쇼핑·주거",
+          title: "동네 고수님들 레벨",
+          category: "생활 적응",
+          score: "조심해서",
+          summary: "특정 국적/세대를 조롱하지 않고, 로컬 생활 고수에게 압도되는 외노자 시점으로 처리.",
+          tags: ["로컬", "어르신", "생활력", "호커센터"],
+          data: {
+            day: "D+377",
+            topic: "로컬 생활 고수 편",
+            category: "생활 적응",
+            panelCount: "8",
+            tone: "담백",
+            koreaNotes: "한국에서도 동네 어르신들은 생활 루틴이 탄탄함\n시장, 병원, 은행 동선이 이미 최적화됨\n초보자는 줄 서는 법부터 배움",
+            singaporeNotes: "호커센터 주문, 자리 맡기, 버스 타이밍까지 로컬 고수들은 빠름\n나는 아직 메뉴판 앞에서 멈춤\n생활력 레벨 차이가 느껴짐",
+            punchline: "나는 이 나라에 살고 있지만, 아직 동네 고수님들 레벨은 못 따라감.",
+            storyNotes: "처음엔 왜 저렇게 빠르게 움직이는지 몰랐다.\n알고 보니 다 이유가 있었다.\n나는 아직 외노자 튜토리얼도 못 끝냈다.",
+            visualMotif: "호커센터 테이블, 티슈로 자리 맡기, 버스카드, 커피, 광부 헬멧"
+          }
+        },
+        {
+          id: "rent-reality",
+          theme: "돈",
+          title: "월급은 싱달러, 월세도 싱달러",
+          category: "돈과 물가",
+          score: "초반 강함",
+          summary: "싱달러 월급은 멋있어 보이지만, 월세와 식비가 먼저 줄을 서 있다.",
+          tags: ["월세", "월급", "방값", "환율"],
+          data: {
+            day: "D+379",
+            topic: "월세 현실 편",
+            category: "돈과 물가",
+            panelCount: "4",
+            tone: "짠함",
+            koreaNotes: "월급날엔 잠깐 강해진 기분이 듦\n환율 계산하면 잠깐 내가 멋져 보임\n하지만 월세 고지서를 보면 바로 겸손해짐",
+            singaporeNotes: "방 하나 렌트비를 말하면 갑자기 모두 숙연해짐\n월급은 외화인데 월세도 외화임\n싱달러는 들어오자마자 집주인을 향해 출국함",
+            punchline: "월급은 싱달러로 받고, 행복은 월세로 압수당함.",
+            storyNotes: "월급날엔 잠깐 부자가 된 기분이 든다.\n하지만 월세와 식비가 기다리고 있어서 오래 가지 않는다.\n나는 돈을 버는 게 아니라 잠깐 맡아두는 중이다.",
+            visualMotif: "S$ 코인, 월세 고지서, 작은 방, 광부 헬멧, 텅 빈 지갑"
+          }
+        },
+        {
+          id: "dating-apps",
+          theme: "연애",
+          title: "해외 데이트앱 리스닝 시험",
+          category: "연애",
+          score: "확장 가능",
+          summary: "매칭은 됐는데 언어, 문화, 약속 장소, 계산 방식에서 새 퀘스트가 열린다.",
+          tags: ["데이트앱", "영어", "문화차이", "약속"],
+          data: {
+            day: "D+380",
+            topic: "해외 데이트앱 편",
+            category: "연애",
+            panelCount: "8",
+            tone: "담백",
+            koreaNotes: "한국 데이트앱은 동네, 취향, 카톡 전환이 빠름\n대화의 눈치와 템포가 익숙함\n맛집과 카페 선택지가 많음",
+            singaporeNotes: "해외 데이트앱은 언어와 문화부터 새로 읽어야 함\nWhere are you from? 질문만 여러 번 받음\n약속 장소가 MRT 노선도 시험처럼 느껴짐",
+            punchline: "연애를 하려 했는데 영어 회화 레벨테스트가 시작됨.",
+            storyNotes: "해외에서 데이트앱을 켜면 설렘보다 번역기가 먼저 생각난다.\n대화는 되는데 뉘앙스가 어렵고, 약속 장소도 노선도부터 봐야 한다.\n연애도 외노자에게는 적응 과제였다.",
+            visualMotif: "휴대폰, 데이트앱 화면, MRT 노선도, 커피, 광부 헬멧, 작은 하트"
+          }
+        },
+        {
+          id: "long-distance-family",
+          theme: "가족 문화",
+          title: "부모님 영상통화 국룰",
+          category: "가족 문화",
+          score: "팔로우 전환",
+          summary: "웃기게 시작하지만 마지막에 살짝 울컥하는 해외살이 가족 소재.",
+          tags: ["부모님", "영상통화", "명절", "밥"],
+          data: {
+            day: "D+381",
+            topic: "부모님 영상통화 편",
+            category: "가족 문화",
+            panelCount: "8",
+            tone: "짠함",
+            koreaNotes: "한국에 있으면 부모님이 가까워도 연락을 자주 미룸\n밥 먹었냐는 말이 익숙해서 대충 넘김\n명절엔 가기 귀찮다고 생각함",
+            singaporeNotes: "해외에 있으면 영상통화 한 번이 갑자기 커짐\n밥 먹었냐는 말에 괜히 울컥함\n명절에 못 가면 치킨으로 마음만 참석함",
+            punchline: "멀리 나오니까 제일 가까운 말이 '밥 먹었어?'였음.",
+            storyNotes: "한국에 있을 땐 부모님 전화가 평범했다.\n해외에 오니 같은 질문도 다르게 들린다.\n밥 먹었냐는 말이 어느 날 갑자기 집처럼 느껴졌다.",
+            visualMotif: "영상통화 화면, 밥그릇, 치킨 배달봉투, 광부 헬멧, 작은 눈물"
+          }
+        }
+      ];
+
+      let activeTone = "병맛";
+      let activeTab = "storyboard";
+      let activePhase = 0;
+      let activeTheme = "전체";
+      let currentOutputs = {};
+      const phaseNames = ["이야기 입력", "초안 확인", "콘티 확인", "복사/저장"];
+      const rawStoryExample = `오늘 쇼피에서 단백질을 사려고 했는데 가격 보고 멈췄다.
+한국에서는 쿠팡으로 대충 시키면 다음 날 오고 가격도 괜찮았는데, 여기서는 배송비랑 용량이랑 브랜드를 보다가 갑자기 머리가 아파졌다.
+헬스는 하고 싶은데 프로틴이 월세처럼 느껴졌다.
+결국 장바구니만 채우고 커피를 마셨다.`;
+
+      const storyRules = [
+        {
+          id: "protein",
+          match: ["단백질", "프로틴", "헬스", "운동", "supplement"],
+          category: "음식",
+          topic: "프로틴 가격 편",
+          notes: ["운동보다 장바구니 계산이 먼저 힘듦", "건강해지려다 통장이 먼저 마름", "프로틴 한 통이 생활비처럼 느껴짐"],
+          singapore: ["단백질 보충제 가격이 예상보다 세게 들어옴", "배송비와 용량 계산을 하다가 피로해짐", "쇼피 장바구니가 작은 예산 회의장이 됨"],
+          punchline: "근육보다 먼저 커지는 건 카드값이었음.",
+          motif: "프로틴통, 쇼피 장바구니, S$ 코인, 커피, 광부 헬멧"
+        },
+        {
+          id: "shopping",
+          match: ["쇼피", "shopee", "쿠팡", "배송", "장바구니", "쇼핑"],
+          category: "쇼핑/소비",
+          topic: "쇼피 적응 편",
+          notes: ["한국식 빠른 배송 감각이 아직 몸에 남아 있음", "살까 말까보다 언제 오냐가 먼저 궁금함", "장바구니가 점점 고민 상담소가 됨"],
+          singapore: ["쇼피는 가격, 배송, 셀러 확인까지 작은 퀘스트처럼 느껴짐", "기다리는 시간까지 계산해야 마음이 편함", "결국 필요한 것보다 비교 탭이 더 많이 열림"],
+          punchline: "쇼핑을 한 게 아니라 배송일과 심리전을 함.",
+          motif: "택배 상자, 쇼피 앱 화면, 배송 추적, 커피, S$ 코인"
+        },
+        {
+          id: "bug",
+          match: ["벌레", "바퀴", "개미", "모기", "bug", "roach"],
+          category: "주거 생활",
+          topic: "싱가포르 벌레 편",
+          notes: ["집 안에서 마주치면 갑자기 서바이벌 장르가 됨", "작은 방인데 생태계가 너무 넓음", "용감한 척하다가 몸이 먼저 굳음"],
+          singapore: ["덥고 습해서 벌레와의 조우가 생활 이벤트가 됨", "창문과 배수구가 갑자기 수상해 보임", "방 안 평화가 한순간에 깨짐"],
+          punchline: "외노자인 줄 알았는데 벌레랑 룸셰어 중이었음.",
+          motif: "큰 벌레 실루엣, 슬리퍼, 방 구석, 식은 커피, 광부 헬멧"
+        },
+        {
+          id: "noise",
+          match: ["리노베이션", "소음", "드릴", "공사", "renovation", "noise"],
+          category: "주거 생활",
+          topic: "리노베이션 소음 편",
+          notes: ["쉬려고 집에 왔는데 집이 쉬게 안 둠", "소리의 출처를 몰라 더 억울함", "드릴 소리가 생활 BGM이 됨"],
+          singapore: ["아침부터 벽 너머 드릴 소리가 알람처럼 들림", "어느 집인지 모르는데 내 방이 같이 흔들림", "끝난 줄 알면 다른 층이 시작함"],
+          punchline: "내 집은 조용한데 옆집이 내 정신을 리노베이션함.",
+          motif: "드릴 소리 글자, 흔들리는 커피, HDB 복도, 벽, 귀마개"
+        },
+        {
+          id: "construction",
+          match: ["건축", "건물", "크레인", "펜스", "느림", "construction"],
+          category: "주거 생활",
+          topic: "공사 속도 편",
+          notes: ["매일 보는데 매일 거의 그대로라 신기함", "공사장이 동네 고정 출연자가 됨", "완공보다 다음 시즌이 궁금함"],
+          singapore: ["몇 달째 같은 펜스와 눈 마주침", "크레인은 움직이는데 풍경은 천천히 바뀜", "출근길 배경음악처럼 공사 소리가 깔림"],
+          punchline: "공사장이 아니라 장기 연재물임.",
+          motif: "공사 펜스, 크레인, 안전모, 달력, 광부 헬멧"
+        },
+        {
+          id: "office",
+          match: ["회사", "출근", "회의", "상사", "직장", "퇴근", "office"],
+          category: "회사 생활",
+          topic: "싱가포르 직장인 편",
+          notes: ["나라가 바뀌어도 출근 싫은 건 그대로임", "커피가 사실상 출근 카드임", "외노자 모드로 하루를 캔다"],
+          singapore: ["밖은 덥고 사무실은 추워서 몸이 헷갈림", "MRT와 오피스 동선이 효율적이라 더 빨리 회사에 도착함", "다국적 영어 대화에 에너지가 빨림"],
+          punchline: "싱달러는 채굴 중인데 영혼도 같이 채굴됨.",
+          motif: "MRT 표지, 사무실 에어컨, 노트북, 아이스 커피, S$ 코인"
+        }
+      ];
+
+      function lines(value) {
+        return value
+          .split("\\n")
+          .map((line) => line.trim())
+          .filter(Boolean);
+      }
+
+      function getData() {
+        const data = Object.fromEntries(new FormData(form).entries());
+        data.tone = activeTone;
+        data.panelCount = Number(data.panelCount || 4);
+        data.korea = lines(data.koreaNotes);
+        data.singapore = lines(data.singaporeNotes);
+        data.story = lines(data.storyNotes || "");
+        return data;
+      }
+
+      function splitStory(value) {
+        return value
+          .replaceAll("?", ".")
+          .replaceAll("!", ".")
+          .split(/[\n.]+/)
+          .map((line) => line.trim())
+          .filter(Boolean);
+      }
+
+      function findStoryRule(raw) {
+        const haystack = raw.toLowerCase();
+        return storyRules.find((rule) => rule.match.some((keyword) => haystack.includes(keyword.toLowerCase()))) || {
+          id: "daily",
+          category: "싱가포르 생활",
+          topic: "싱가포르 생활 편",
+          notes: ["처음엔 별일 아닌 줄 알았는데 계속 생각남", "외노자 생활은 사소한 순간에서 데미지가 들어옴", "커피로 버티는 장면이 자연스럽게 들어감"],
+          singapore: ["싱가포르의 날씨, 동선, 가격, 언어 중 하나가 생활감으로 드러남", "작은 사건인데 해외살이 체감이 확 남", "채굴이가 S$를 캐며 적응하는 장면으로 풀기 좋음"],
+          punchline: "오늘도 별일 아닌 일에 싱달러 채굴력이 깎임.",
+          motif: "아이스 커피, S$ 코인, 광부 헬멧, 머라이언, 생활 소품"
+        };
+      }
+
+      function compactTitle(raw, rule) {
+        const first = splitStory(raw)[0] || rule.topic;
+        const cleaned = first
+          .replace(/오늘|어제|진짜|갑자기|근데|그리고/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+        if (!cleaned) return rule.topic;
+        return cleaned.length > 20 ? `${cleaned.slice(0, 20)}... 편` : `${cleaned} 편`;
+      }
+
+      function polishRawStory() {
+        const raw = rawStoryInput.value.trim();
+        if (!raw) {
+          rawStoryInput.value = rawStoryExample;
+          statusEl.textContent = "예시 사연 입력됨";
+          return;
+        }
+
+        const rule = findStoryRule(raw);
+        const storyLines = splitStory(raw);
+        const storySummary = storyLines.slice(0, 4);
+        const payload = {
+          toonName: "채굴이의 싱달러 채굴일지",
+          series: "싱가포르 채굴일지",
+          day: form.elements.day.value || "D+370",
+          topic: compactTitle(raw, rule),
+          category: rule.category,
+          character: "채굴이",
+          panelCount: storyLines.length >= 6 ? "8" : "4",
+          storySource: "내 이야기",
+          tone: activeTone || "병맛",
+          koreaNotes: rule.notes.join("\n"),
+          singaporeNotes: rule.singapore.join("\n"),
+          punchline: rule.punchline,
+          storyNotes: storySummary.length ? storySummary.join("\n") : raw,
+          visualMotif: rule.motif
+        };
+
+        fillSample(payload);
+        draftPreviewEl.hidden = false;
+        draftPreviewEl.innerHTML = `
+          <h3>${escapeHtml(payload.topic)}</h3>
+          <p>${escapeHtml(rule.category)} · ${escapeHtml(payload.panelCount)}컷 · ${escapeHtml(payload.punchline)}</p>
+        `;
+        statusEl.textContent = "초안 다듬음";
+        setPhase(1);
+      }
+
+      function toneWord(tone) {
+        return {
+          "병맛": "비장한데 하찮은 표정, 과장된 땀방울, 쓸데없이 웅장한 자막",
+          "담백": "건조한 표정, 짧은 자막, 일상 관찰 위주",
+          "짠함": "작은 한숨, 빈 커피컵, 월급 전 체력 3% 느낌",
+          "정보형": "정보를 명확히 정리하는 자막, 과장보다 관찰 중심"
+        }[tone];
+      }
+
+      function panelText(data) {
+        const felt1 = data.korea[0] || "처음엔 별일 아닌 줄 알았다";
+        const felt2 = data.korea[1] || data.korea[0] || "커피 없이는 버티기 어렵다";
+        const felt3 = data.korea[2] || "이상하게 매일 조금씩 적응한다";
+        const sg1 = data.singapore[0] || "싱가포르 생활 디테일 하나가 눈에 들어온다";
+        const sg2 = data.singapore[1] || data.singapore[0] || "현지 룰을 몰라 잠깐 멈칫한다";
+        const sg3 = data.singapore[2] || data.singapore[1] || "습도와 물가와 알림이 같이 몰려온다";
+        const story1 = data.story[0] || `${data.topic}을 겪고 나서 싱가포르 생활의 이상한 현실을 깨달았다.`;
+        const story2 = data.story[1] || "처음엔 신기했는데, 어느 순간 그냥 내 일상이 되어 있었다.";
+        const story3 = data.story[2] || "그래도 커피를 들고 있으면 버틸 수 있을 것 같았다.";
+        const final = data.punchline.trim() || "결론: 오늘도 채굴이는 S$보다 체력을 더 많이 캤다.";
+
+        const pool = [
+          {
+            label: `${data.storySource}`,
+            scene: `${data.character}가 작은 노트에 "${data.topic}"이라고 적으며 싱가포르 생활 사연을 꺼낸다. 아이스 커피와 S$ 코인이 옆에 놓여 있다.`,
+            speech: "일단 오늘 캔 이야기부터",
+            note: story1
+          },
+          {
+            label: "싱가포르 장면",
+            scene: `${data.character}가 싱가포르의 일상 한복판에서 ${sg1} 상황을 마주한다. 배경에는 MRT, HDB, 호커센터, 오피스 중 하나가 작게 보인다.`,
+            speech: sg1,
+            note: "처음엔 그냥 현지 디테일인 줄 알았다"
+          },
+          {
+            label: "외노자 반응",
+            scene: `${data.character}가 아이스 커피를 꽉 쥐고 ${felt1} 표정으로 잠깐 굳는다. 헬멧 불빛이 약하게 흔들린다.`,
+            speech: felt1,
+            note: "외노자 센서 작동"
+          },
+          {
+            label: "현지 룰 발견",
+            scene: `${data.character}가 ${sg2} 현실을 이해하려고 주변 사람과 표지판, 앱 화면을 번갈아 본다.`,
+            speech: sg2,
+            note: "이 나라에는 이 나라의 룰이 있다"
+          },
+          {
+            label: "적응 실패",
+            scene: `${data.character}가 현지 생활을 이해한 척하다가 바로 땀을 흘린다. 커피컵의 얼음이 빠르게 녹는다.`,
+            speech: "아 나 이제 적응한 듯?",
+            note: "라고 말하는 순간 보통 하나 더 터짐"
+          },
+          {
+            label: "생활 데미지",
+            scene: `${data.character}가 ${sg3} 상황 속에서 S$ 코인, 알림, 영수증, 습도 표시 사이에 갇혀 있다.`,
+            speech: sg3,
+            note: story2
+          },
+          {
+            label: "채굴이 계산",
+            scene: `${data.character}가 작은 계산판 앞에서 오늘 잃은 체력, 돈, 멘탈을 S$ 광석처럼 분류한다.`,
+            speech: "오늘도 뭔가 캤는데... 내가 캔 건가 털린 건가",
+            note: felt2
+          },
+          {
+            label: "공감 포인트",
+            scene: `싱가포르 곳곳에 사는 둥근 외노자 캐릭터들이 각자 커피를 들고 비슷한 표정을 짓는다.`,
+            speech: "이거 나만 그런 거 아니지?",
+            note: "댓글에서 같은 사연이 나올 타이밍"
+          },
+          {
+            label: "사연 제보각",
+            scene: `${data.character}가 DM 봉투와 제보함 앞에서 곡괭이를 들고 다음 사연을 캐려는 자세를 취한다.`,
+            speech: "너희 싱가포르 사연도 캐봅니다",
+            note: "익명 제보 환영"
+          },
+          {
+            label: "돈의 순간",
+            scene: `${data.character}가 S$ 코인을 보며 잠깐 웃다가 월세, 식비, 택배비, 커피값 영수증을 보고 다시 무표정해진다.`,
+            speech: "싱달러는 들어오자마자 출근함",
+            note: "채굴 후 바로 반납"
+          },
+          {
+            label: "오늘의 체념",
+            scene: `${data.character}가 식은 커피를 들고 싱가포르 하늘 아래 잠깐 멍하게 서 있다.`,
+            speech: "그래도 내일 또 하겠지",
+            note: story3
+          },
+          {
+            label: "작은 현지화",
+            scene: `${data.character}가 이제는 조금 익숙해진 손놀림으로 앱, 교통카드, 커피, 우산 중 하나를 챙긴다.`,
+            speech: felt3,
+            note: "적응은 거창하지 않고 작은 자동화로 온다"
+          },
+          {
+            label: "싱가포르 던전",
+            scene: `${data.character} 앞에 쇼피, 벌레, 소음, 월세, 비자, 회의라고 적힌 작은 던전 문들이 줄지어 있다.`,
+            speech: "다음 문은 또 뭐냐",
+            note: "장기 연재 가능 구간"
+          },
+          {
+            label: "제보 예고",
+            scene: `${data.character}가 광산 입구 앞에 '싱가포르 사연 광산' 표지판을 세운다.`,
+            speech: "다음 사연도 캐러 갑니다",
+            note: "싱가포르 생활 제보 환영"
+          },
+          {
+            label: "결론",
+            scene: `${data.character}가 커피와 곡괭이를 들고 오늘의 싱가포르 생활 던전을 빠져나온다. 뒤에는 S$ 코인과 작은 머라이언이 보인다.`,
+            speech: "오늘도 채굴 완료... 인가?",
+            note: final
+          }
+        ];
+
+        const selected = pool.slice(0, Math.max(4, Math.min(data.panelCount, 16)));
+        selected[selected.length - 1] = pool[pool.length - 1];
+        return selected;
+      }
+
+      function makeStoryboard(data, panels) {
+        return `${data.toonName}
+${data.series} — ${data.day}
+${data.topic}
+톤: ${data.tone}
+분량: ${data.panelCount}컷
+출처: ${data.storySource}
+캐릭터: ${data.character}, 사람처럼 보이지 않는 흰 둥근 싱달러 광부 생명체
+
+${panels.map((panel, index) => `${index + 1}컷 — ${panel.label}
+장면: ${panel.scene}
+말풍선: "${panel.speech}"
+${index === panels.length - 1 ? "마지막 자막" : "작은 자막"}: "${panel.note}"`).join("\n\n")}`;
+      }
+
+      function makeImagePrompt(data, panels) {
+        const layout = data.panelCount <= 4
+          ? "Square 1:1, 4 panels in a 2x2 grid."
+          : `Instagram carousel comic with ${Math.ceil(data.panelCount / 4)} square slides, 4 panels per slide in a 2x2 grid. Keep the same character and visual continuity across all slides.`;
+        return `Use case: illustration-story
+Asset type: Instagram ${data.panelCount <= 4 ? "square 4-panel" : "carousel longform"} Korean webtoon comic
+Primary request: Create a Korean Instagram-toon ${data.panelCount}-panel comic for the toon series "${data.toonName}". Episode corner: "${data.series} — ${data.day}, ${data.topic}". Start from ${data.storySource}, make it relatable for Korean expat workers and overseas workers in any country, and end with the punchline: "${data.punchline.trim()}".
+
+Character: "${data.character}", a cute non-human white round mascot, not a realistic person. Simple white round head and body, tiny curl of hair, half-lidded tired eyes, blush cheeks, yellow miner helmet with headlamp, office shirt, suspenders or overalls, boots, holding iced coffee. Optional small pickaxe and S$ coins. Keep character consistent in all panels.
+
+Style: Korean Instagram diary toon, hand-drawn black outlines, soft pastel watercolor shading, lots of white space, thin imperfect panel borders, cute but slightly absurd. Tone: ${toneWord(data.tone)}.
+
+Composition: ${layout} Each panel numbered clearly. Main header at top: "${data.toonName}". Episode line below: "${data.series} — ${data.day}". Subtitle: "${data.topic}".
+
+${panels.map((panel, index) => `Panel ${index + 1}: ${panel.scene}
+Text: caption "${panel.label}", speech bubble "${panel.speech}", ${index === panels.length - 1 ? "big final caption" : "small caption"} "${panel.note}".`).join("\n\n")}
+
+Visual motifs: ${data.visualMotif}.
+Constraints: The character must remain a mascot creature, not human. Render Korean text accurately and legibly. Keep panels clean enough for mobile Instagram viewing. Make the final punchline prominent.
+Avoid: realistic human face/body, photorealism, cluttered tiny text, dark gritty style, watermark, distorted Korean text, extra panels.`;
+      }
+
+      function makeTextlessPrompt(data, panels) {
+        const layout = data.panelCount <= 4
+          ? "one square image with 4 panels in a 2x2 grid"
+          : `${Math.ceil(data.panelCount / 4)} square carousel slides, each with 4 panels in a 2x2 grid`;
+        return `Use case: illustration-story
+Asset type: Instagram ${data.panelCount <= 4 ? "square" : "carousel"} Korean webtoon comic, textless version for adding Korean copy manually
+
+Create a clean ${data.panelCount}-panel comic illustration for "${data.toonName} / ${data.series} — ${data.day}, ${data.topic}" without any text, speech bubbles, captions, letters, signs, or numbers. Use ${layout}.
+
+Main character: "${data.character}", a cute non-human white round Singapore-dollar miner mascot, not a human. Tiny curl of hair, half-lidded tired eyes, blush cheeks, yellow miner helmet with headlamp, office shirt, suspenders/overalls, boots, iced coffee, optional pickaxe, S$ coins.
+
+${panels.map((panel, index) => `Panel ${index + 1} visual: ${panel.scene}`).join("\n")}
+
+Style: Korean Instagram diary toon, hand-drawn black outlines, soft pastel watercolor shading, lots of white space, thin imperfect 2x2 panel borders. Tone: ${toneWord(data.tone)}.
+Layout: Leave clean empty areas at the top of each panel for manually added Korean captions and speech bubbles later.
+Avoid: all text, letters, symbols, watermark, realistic human body, dark gritty style, crowded backgrounds.`;
+      }
+
+      function makeInstagram(data, panels) {
+        const tags = ["#싱가포르생활", "#싱가포르직장인", "#해외살이", "#외노자일기", "#싱가포르생활툰", "#인스타툰", "#해외취업", "#사연툰"];
+        const finalNote = panels[panels.length - 1].note;
+        return `${data.toonName}
+${data.series} — ${data.day}
+${data.topic}
+${data.panelCount}컷 ${data.storySource}
+
+오늘의 싱가포르 디테일
+- ${data.singapore.join("\n- ")}
+
+채굴이의 체감
+- ${data.korea.join("\n- ")}
+
+${finalNote}
+
+오늘도 ${data.character}는 커피 들고 S$ 캐러 갑니다.
+싱가포르 생활/외노자 사연은 익명으로 제보 받아요.
+
+${tags.join(" ")}`;
+      }
+
+      function makeTwitter(data, panels) {
+        const finalNote = panels[panels.length - 1].note;
+        return `${data.toonName}
+${data.series} — ${data.day}
+${data.topic}
+
+싱가포르 생활 디테일:
+${data.singapore[0] || panels[1].speech}
+
+채굴이 체감:
+${data.korea[0] || panels[2].speech}
+
+${finalNote}`;
+      }
+
+      function makeSubmissionForm(data) {
+        return `외노자 사연 제보폼
+
+${data.toonName} 제보함
+채굴이가 해외살이 사연을 익명으로 캐서 ${data.panelCount}컷 인스타툰으로 각색합니다.
+
+1. 어느 나라/도시에 살고 있나요?
+예: 싱가포르, 도쿄, 시드니, 두바이, 베를린
+
+2. 어떤 상황이었나요?
+예: 출근길, 회사, 비자, 집 구하기, 병원, 점심값, 인간관계, 명절
+
+3. 한 줄로 요약하면?
+예: MRT는 효율적인데 너무 효율적으로 회사에 도착한다.
+
+4. 제일 웃겼거나 빡쳤던 장면/대사는?
+
+5. 결말 감정은 무엇인가요?
+웃김 / 빡침 / 짠함 / 체념 / 감동 / 정보공유
+
+6. 꼭 가려야 하는 정보가 있나요?
+회사명, 실명, 국적, 직무, 지역, 가족관계 등
+
+7. 익명 각색 및 인스타툰 제작에 동의하나요?
+동의 / 일부 동의 / 먼저 확인 필요
+
+제보 원칙
+- 실명, 회사명, 얼굴, 연락처는 사용하지 않습니다.
+- 너무 특정 가능한 디테일은 각색합니다.
+- 제보자의 감정은 살리고, 위험한 개인정보는 지웁니다.`;
+      }
+
+      function makeProduction(data) {
+        return `업로드 루틴
+1. "텍스트 없는 프롬프트"로 그림 먼저 생성
+2. Canva/Figma에서 제목, 말풍선, 마지막 자막 직접 얹기
+3. 마지막 컷의 펀치라인을 가장 크게 배치
+4. ${data.panelCount > 4 ? "캐러셀 첫 장에는 제목과 강한 상황 제시, 마지막 장에는 제보 유도 문구 배치" : "4컷은 마지막 컷 펀치라인에 집중"}
+5. 인스타 캡션 붙이고, X 글은 별도 게시
+6. 다음 편 소재를 이 대시보드에 저장
+
+고정 캐릭터 설정
+- 이름: ${data.character}
+- 정체성: 사람처럼 보이지 않는 흰 둥근 해외 외노자 사연 광부 생명체
+- 소품: ${data.visualMotif}
+- 표정: 피곤하지만 커피 때문에 버티는 외노자
+
+시리즈 확장 규칙
+- 4컷: 내 이야기, 한 방 공감, X에도 같이 올릴 소재
+- 8컷: 짧은 사연, 저장 유도
+- 12컷: 제보 사연, 캐러셀 완독 유도
+- 16컷: 빌드업이 필요한 긴 사연, 마지막 장에 제보 CTA
+
+추천 파일명
+${data.day.replace(/[^a-zA-Z0-9가-힣+]/g, "-")}-${data.topic.replace(/\\s+/g, "-")}.png`;
+      }
+
+      function generate() {
+        const data = getData();
+        const panels = panelText(data);
+        currentOutputs = {
+          storyboard: makeStoryboard(data, panels),
+          imagePrompt: makeImagePrompt(data, panels),
+          textlessPrompt: makeTextlessPrompt(data, panels),
+          instagram: makeInstagram(data, panels),
+          twitter: makeTwitter(data, panels),
+          submission: makeSubmissionForm(data),
+          production: makeProduction(data)
+        };
+
+        renderTabs();
+        renderOutput();
+        renderPreview(data, panels);
+        statusEl.textContent = "생성됨";
+      }
+
+      function renderPreview(data, panels) {
+        previewEl.innerHTML = `
+          <div class="comic-title">
+            <strong>${escapeHtml(data.toonName)}</strong>
+            <span>${escapeHtml(data.series)} — ${escapeHtml(data.day)} · ${escapeHtml(data.topic)}</span>
+          </div>
+          <div class="comic-grid ${panels.length > 4 ? "longform" : ""}">
+            ${panels.map((panel, index) => `
+              <article class="comic-panel">
+                <div class="panel-meta">
+                  <span class="panel-num">${index + 1}</span>
+                  <span class="panel-label">${escapeHtml(panel.label)}</span>
+                </div>
+                <div class="sketch">
+                  ${sketchMarkup(panel, index)}
+                  <span class="sketch-caption">${escapeHtml(sketchCaption(panel))}</span>
+                </div>
+                <div class="bubble">${escapeHtml(panel.speech)}</div>
+                <div class="small-note">${escapeHtml(panel.note)}</div>
+              </article>
+            `).join("")}
+          </div>
+        `;
+      }
+
+      function sketchType(panel) {
+        const text = `${panel.label} ${panel.scene} ${panel.speech} ${panel.note}`.toLowerCase();
+        if (text.includes("쇼피") || text.includes("shopee") || text.includes("택배") || text.includes("배송")) return "shopping";
+        if (text.includes("단백질") || text.includes("프로틴") || text.includes("닭가슴살") || text.includes("식단")) return "protein";
+        if (text.includes("벌레") || text.includes("도마뱀") || text.includes("룸메이트")) return "bug";
+        if (text.includes("리노베이션") || text.includes("소음") || text.includes("드릴") || text.includes("귀마개")) return "noise";
+        if (text.includes("공사") || text.includes("건축") || text.includes("크레인") || text.includes("펜스")) return "construction";
+        if (text.includes("회의") || text.includes("회사") || text.includes("보고") || text.includes("캘린더") || text.includes("메일") || text.includes("비자")) return "office";
+        if (text.includes("연애") || text.includes("데이트") || text.includes("하트") || text.includes("앱")) return "dating";
+        if (text.includes("부모") || text.includes("가족") || text.includes("영상통화") || text.includes("명절") || text.includes("밥")) return "family";
+        if (text.includes("월세") || text.includes("돈") || text.includes("지갑") || text.includes("s$") || text.includes("환율")) return "money";
+        if (text.includes("mrt") || text.includes("출근") || text.includes("환승") || text.includes("지하철")) return "commute";
+        return "default";
+      }
+
+      function sketchCaption(panel) {
+        const scene = panel.scene.replace(/\s+/g, " ");
+        return scene.length > 42 ? `${scene.slice(0, 42)}...` : scene;
+      }
+
+      function sketchMarkup(panel, index) {
+        const type = sketchType(panel);
+        const visual = visualSpec(type, panel);
+        return `
+          <div class="visual-card ${escapeHtml(type)}">
+            <div class="visual-top">
+              <span class="visual-scene">${escapeHtml(visual.title)}</span>
+              <span class="visual-camera">${escapeHtml(visual.camera[index % visual.camera.length])}</span>
+            </div>
+            <div class="visual-stage" aria-label="${escapeHtml(panel.label)} 이미지 콘티">
+              <div class="visual-lines"></div>
+              <div class="visual-prop prop-main">${visual.main}</div>
+              <div class="visual-prop prop-side">${visual.side}</div>
+              <div class="visual-prop prop-wide">${escapeHtml(visual.wide)}</div>
+              <div class="visual-mascot"><span class="visual-face"></span></div>
+            </div>
+            <p class="visual-note">${escapeHtml(visual.note)}</p>
+          </div>
+        `;
+      }
+
+      function visualSpec(type, panel) {
+        const scene = sketchCaption(panel);
+        const specs = {
+          shopping: {
+            title: "쇼핑/배송",
+            main: "BOX",
+            side: "APP",
+            wide: "배송 대기",
+            note: "택배 상자 + 앱 화면 + 기다리는 채굴이",
+            camera: ["WIDE / 택배 비교", "MID / 앱 확인", "CU / 가격 충격", "PUSH / 배송일"]
+          },
+          protein: {
+            title: "단백질/식비",
+            main: "PRO",
+            side: "S$",
+            wide: "식단 예산",
+            note: "프로틴통 + S$ 코인 + 텅 빈 예산",
+            camera: ["CU / 가격표", "MID / 프로틴통", "WIDE / 마트", "PUSH / 지갑"]
+          },
+          bug: {
+            title: "벌레/집",
+            main: "BUG",
+            side: "RUN",
+            wide: "새 룸메이트",
+            note: "큰 벌레 실루엣 + 멈춘 채굴이 + 도망 동선",
+            camera: ["CU / 발견", "WIDE / 방 전체", "PUSH / 공포", "MID / 대치"]
+          },
+          noise: {
+            title: "소음/리노베이션",
+            main: "DRILL",
+            side: "!!!",
+            wide: "벽이 운다",
+            note: "드릴 소리 + 흔들리는 커피 + 멘탈 균열",
+            camera: ["WIDE / 옆집", "CU / 드릴", "MID / 커피 진동", "PUSH / 멘탈"]
+          },
+          construction: {
+            title: "공사/건축",
+            main: "CRANE",
+            side: "FENCE",
+            wide: "몇 달째 같은 컷",
+            note: "크레인 + 공사 펜스 + 매일 같은 출근길",
+            camera: ["WIDE / 공사장", "MID / 펜스", "TIME / 달력", "PUSH / 체념"]
+          },
+          office: {
+            title: "회사/회의",
+            main: "DOC",
+            side: "MEET",
+            wide: "회의실 압박",
+            note: "보고서 + 회의실 + 눈치/알림에 눌린 채굴이",
+            camera: ["WIDE / 회의실", "MID / 발언 타이밍", "CU / 알림", "PUSH / 보고"]
+          },
+          dating: {
+            title: "연애/앱",
+            main: "APP",
+            side: "LOVE",
+            wide: "번역기 ON",
+            note: "데이트앱 + 하트 + 영어 대화 퀘스트",
+            camera: ["CU / 매칭", "MID / 채팅", "WIDE / 약속 장소", "PUSH / 어색함"]
+          },
+          family: {
+            title: "가족/통화",
+            main: "CALL",
+            side: "HOME",
+            wide: "밥 먹었어?",
+            note: "영상통화 화면 + 집 생각 + 살짝 울컥",
+            camera: ["CU / 얼굴", "MID / 통화", "WIDE / 혼밥", "PUSH / 감정"]
+          },
+          money: {
+            title: "돈/월세",
+            main: "S$",
+            side: "BILL",
+            wide: "월급 반납",
+            note: "S$ 코인 + 월세 고지서 + 사라지는 지갑",
+            camera: ["CU / 월급", "MID / 고지서", "WIDE / 방", "PUSH / 잔고"]
+          },
+          commute: {
+            title: "출근/MRT",
+            main: "MRT",
+            side: "EXIT",
+            wide: "회사 도착",
+            note: "역 표지 + 환승 화살표 + 죽은 눈의 채굴이",
+            camera: ["WIDE / 역", "MID / 환승", "CU / 표정", "PUSH / 회사"]
+          },
+          default: {
+            title: "외노자 일상",
+            main: "S$",
+            side: "JOB",
+            wide: "커피 필요",
+            note: scene || "채굴이가 커피 들고 오늘의 사연을 캔다",
+            camera: ["WIDE / 상황", "MID / 반응", "CU / 표정", "PUSH / 펀치"]
+          }
+        };
+        return specs[type] || specs.default;
+      }
+
+      function renderTabs() {
+        tabsEl.innerHTML = Object.keys(tabLabels)
+          .map((key) => `<button type="button" data-tab="${key}" class="${key === activeTab ? "active" : ""}">${tabLabels[key]}</button>`)
+          .join("");
+      }
+
+      function renderOutput() {
+        outputTitleEl.textContent = tabLabels[activeTab];
+        outputTextEl.textContent = currentOutputs[activeTab] || "";
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function copyText(text) {
+        navigator.clipboard.writeText(text).then(() => {
+          statusEl.textContent = "복사됨";
+          setTimeout(() => (statusEl.textContent = "생성됨"), 1000);
+        });
+      }
+
+      function fillSample(sample) {
+        for (const [key, value] of Object.entries(sample)) {
+          const input = form.elements[key];
+          if (input) input.value = value;
+        }
+        setTone(sample.tone);
+        generate();
+      }
+
+      function fillIdea(idea) {
+        const payload = {
+          toonName: "채굴이의 싱달러 채굴일지",
+          series: "싱가포르 채굴일지",
+          character: "채굴이",
+          storySource: "내 이야기",
+          ...idea.data
+        };
+        fillSample(payload);
+        ideaGridEl.querySelectorAll(".idea-card").forEach((card) => {
+          card.classList.toggle("active", card.dataset.ideaId === idea.id);
+        });
+        statusEl.textContent = "소재 선택됨";
+        setPhase(1);
+      }
+
+      function setPhase(phase) {
+        activePhase = Math.max(0, Math.min(phaseNames.length - 1, phase));
+        phaseSections.forEach((section) => {
+          section.hidden = Number(section.dataset.phaseSection) !== activePhase;
+        });
+        controlsEl.hidden = activePhase !== 1;
+        workspaceEl.hidden = activePhase === 1;
+        gridEl.classList.add("single-phase");
+        phaseNavEl.querySelectorAll(".phase-btn").forEach((button) => {
+          button.classList.toggle("active", Number(button.dataset.phase) === activePhase);
+        });
+        phaseLabelEl.textContent = `${activePhase + 1} / ${phaseNames.length} · ${phaseNames[activePhase]}`;
+        prevPhaseBtn.disabled = activePhase === 0;
+        nextPhaseBtn.disabled = activePhase === phaseNames.length - 1;
+      }
+
+      function renderIdeaBank() {
+        const query = ideaSearchEl.value.trim().toLowerCase();
+        const category = ideaFilterEl.value;
+        const theme = themes.find((item) => item.id === activeTheme) || themes[0];
+        const filtered = ideaBank.filter((idea) => {
+          const haystack = [idea.title, idea.theme, idea.category, idea.summary, ...idea.tags].join(" ").toLowerCase();
+          const matchesQuery = !query || haystack.includes(query);
+          const matchesCategory = category === "전체" || idea.category === category;
+          const matchesTheme = activeTheme === "전체" || idea.theme === activeTheme;
+          return matchesQuery && matchesCategory && matchesTheme;
+        });
+
+        themeNoteEl.textContent = theme.note;
+        renderSeriesMap();
+        ideaPickCountEl.textContent = `${filtered.length}개 후보`;
+        if (!filtered.length) {
+          ideaGridEl.innerHTML = `<div class="small-note">검색된 소재가 없습니다. 다른 키워드로 찾아보세요.</div>`;
+          return;
+        }
+
+        ideaGridEl.innerHTML = filtered.map((idea) => `
+          <article class="idea-card" data-idea-id="${escapeHtml(idea.id)}">
+            <div class="idea-top">
+              <strong>${escapeHtml(idea.title)}</strong>
+              <span class="idea-score">${escapeHtml(idea.score)}</span>
+            </div>
+            <p>${escapeHtml(idea.summary)}</p>
+            <div class="idea-tags">
+              <span>${escapeHtml(idea.theme)}</span>
+              <span>${escapeHtml(idea.category)}</span>
+              ${idea.tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
+            </div>
+            <button type="button" data-pick-idea="${escapeHtml(idea.id)}">이 소재로 만들기</button>
+          </article>
+        `).join("");
+      }
+
+      function renderSeriesMap() {
+        const plan = seriesPlans[activeTheme] || seriesPlans["전체"];
+        seriesMapEl.innerHTML = `
+          <section class="series-box">
+            <h3>${escapeHtml(plan.name)}</h3>
+            <p>${escapeHtml(plan.promise)}</p>
+            <p><strong>포맷:</strong> ${escapeHtml(plan.format)}</p>
+            <p><strong>반복 개그:</strong> ${escapeHtml(plan.gag)}</p>
+          </section>
+          <section class="series-box">
+            <h4>초기 회차 후보</h4>
+            <div class="series-list">
+              ${plan.seeds.map((seed) => `<span>${escapeHtml(seed)}</span>`).join("")}
+            </div>
+          </section>
+        `;
+      }
+
+      function renderThemeRail() {
+        const counts = ideaBank.reduce((acc, idea) => {
+          acc[idea.theme] = (acc[idea.theme] || 0) + 1;
+          return acc;
+        }, {});
+
+        themeRailEl.innerHTML = themes.map((theme) => {
+          const count = theme.id === "전체" ? ideaBank.length : counts[theme.id] || 0;
+          return `
+            <button class="theme-chip ${theme.id === activeTheme ? "active" : ""}" type="button" data-theme="${escapeHtml(theme.id)}">
+              <strong>${escapeHtml(theme.label)} · ${count}</strong>
+              <span>${escapeHtml(theme.desc)}</span>
+            </button>
+          `;
+        }).join("");
+      }
+
+      function setTone(tone) {
+        activeTone = tone;
+        toneRow.querySelectorAll("button").forEach((button) => {
+          button.classList.toggle("active", button.dataset.tone === tone);
+        });
+      }
+
+      function savedIdeas() {
+        try {
+          const oldSeries = "오늘의 " + "한" + "싱차이";
+          const oldCategory = "한" + "싱차이";
+          return JSON.parse(localStorage.getItem("singdollarIdeas") || "[]").map((idea) => ({
+            ...idea,
+            series: idea.series === oldSeries ? "싱가포르 채굴일지" : idea.series,
+            category: idea.category === oldCategory ? "싱가포르 생활" : idea.category
+          }));
+        } catch {
+          return [];
+        }
+      }
+
+      function persistIdeas(ideas) {
+        localStorage.setItem("singdollarIdeas", JSON.stringify(ideas));
+        renderSaved();
+      }
+
+      function saveCurrent() {
+        const data = getData();
+        const ideas = savedIdeas();
+        ideas.unshift({ ...data, savedAt: new Date().toISOString() });
+        persistIdeas(ideas.slice(0, 30));
+        statusEl.textContent = "저장됨";
+      }
+
+      function renderSaved() {
+        const ideas = savedIdeas();
+        savedCountEl.textContent = `${ideas.length}개`;
+        if (!ideas.length) {
+          savedListEl.innerHTML = `<div class="small-note">저장한 소재가 아직 없습니다.</div>`;
+          return;
+        }
+        savedListEl.innerHTML = ideas
+          .map((idea, index) => `
+            <div class="saved-item">
+              <div>
+                <strong>${escapeHtml(idea.series)} — ${escapeHtml(idea.day)}</strong>
+                <span>${escapeHtml(idea.topic)} · ${escapeHtml(idea.tone)}</span>
+              </div>
+              <button type="button" data-load="${index}">불러오기</button>
+            </div>
+          `)
+          .join("");
+      }
+
+      function downloadAll() {
+        const data = getData();
+        const body = Object.entries(currentOutputs)
+          .map(([key, value]) => `## ${tabLabels[key]}\\n\\n${value}`)
+          .join("\\n\\n");
+        const blob = new Blob([body], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${data.day}-${data.topic}`.replace(/[^a-zA-Z0-9가-힣+.-]+/g, "-") + ".txt";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        generate();
+        setPhase(2);
+      });
+
+      toneRow.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-tone]");
+        if (!button) return;
+        setTone(button.dataset.tone);
+        generate();
+      });
+
+      tabsEl.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-tab]");
+        if (!button) return;
+        activeTab = button.dataset.tab;
+        renderTabs();
+        renderOutput();
+      });
+
+      phaseNavEl.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-phase]");
+        if (!button) return;
+        setPhase(Number(button.dataset.phase));
+      });
+
+      prevPhaseBtn.addEventListener("click", () => setPhase(activePhase - 1));
+      nextPhaseBtn.addEventListener("click", () => {
+        if (activePhase === 0) {
+          polishRawStory();
+          return;
+        }
+        if (activePhase === 1) {
+          generate();
+          setPhase(2);
+          return;
+        }
+        setPhase(activePhase + 1);
+      });
+
+      copyBtn.addEventListener("click", () => copyText(currentOutputs[activeTab] || ""));
+      saveBtn.addEventListener("click", saveCurrent);
+      sampleBtn.addEventListener("click", () => {
+        rawStoryInput.value = rawStoryExample;
+        polishRawStory();
+      });
+      downloadBtn.addEventListener("click", downloadAll);
+      polishStoryBtn.addEventListener("click", polishRawStory);
+      sampleStoryBtn.addEventListener("click", () => {
+        rawStoryInput.value = rawStoryExample;
+        statusEl.textContent = "예시 사연 입력됨";
+      });
+
+      ideaSearchEl.addEventListener("input", renderIdeaBank);
+      ideaFilterEl.addEventListener("change", renderIdeaBank);
+      themeRailEl.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-theme]");
+        if (!button) return;
+        activeTheme = button.dataset.theme;
+        renderThemeRail();
+        renderIdeaBank();
+      });
+      ideaGridEl.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-pick-idea]");
+        if (!button) return;
+        const idea = ideaBank.find((item) => item.id === button.dataset.pickIdea);
+        if (idea) fillIdea(idea);
+      });
+
+      savedListEl.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-load]");
+        if (!button) return;
+        const idea = savedIdeas()[Number(button.dataset.load)];
+        if (idea) fillSample(idea);
+      });
+
+      renderThemeRail();
+      renderIdeaBank();
+      fillSample(samples[0]);
+      setPhase(0);
+      renderSaved();
+    </script>
+  </body>
+</html>
